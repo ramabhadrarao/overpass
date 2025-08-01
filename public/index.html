@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Route Management System</title>
+    <title>Route Management System v2.0</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -22,7 +22,7 @@
         }
         
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -46,11 +46,21 @@
             opacity: 0.9;
         }
         
+        .admin-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
         .main-content {
             display: grid;
             grid-template-columns: 350px 1fr;
             gap: 20px;
-            height: calc(100vh - 200px);
+            height: calc(100vh - 250px);
         }
         
         .sidebar {
@@ -289,9 +299,134 @@
             margin-bottom: 10px;
         }
         
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .view-toggle button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #e0e0e0;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .view-toggle button.active {
+            background: #1e3c72;
+            color: white;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .modal-header {
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #1e3c72;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        .modal-body p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .modal-footer button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-confirm {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .btn-confirm:hover {
+            background: #45a049;
+        }
+        
+        .btn-cancel {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background: #da190b;
+        }
+        
+        .enhanced-section {
+            background: #e8f0fe;
+            border: 2px solid #1e3c72;
+            margin-bottom: 20px;
+        }
+        
+        .enhanced-section h3 {
+            color: #1e3c72;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .enhanced-badge {
+            background: #1e3c72;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
         
         @keyframes pulse {
@@ -321,13 +456,45 @@
             .sidebar {
                 max-height: 300px;
             }
+            
+            .admin-info {
+                position: static;
+                margin-top: 10px;
+                background: rgba(255, 255, 255, 0.2);
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Route Management System</h1>
+        <h1>Route Management System v2.0</h1>
         <p>Track routes, analyze paths, and monitor logistics</p>
+        <div class="admin-info">
+            <span>👤 Default Login: admin / admin123</span>
+        </div>
+    </div>
+    
+    <!-- API Confirmation Modal -->
+    <div id="apiModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>API Permission Required</h2>
+            </div>
+            <div class="modal-body">
+                <p id="apiModalMessage">This action requires access to external APIs.</p>
+                <p><strong>APIs that will be used:</strong></p>
+                <ul id="apiList">
+                    <li>Weather API (OpenWeather)</li>
+                    <li>Traffic API (TomTom)</li>
+                    <li>Geocoding API (Mapbox)</li>
+                </ul>
+                <p><em>Note: Overpass API (for amenities) does not require confirmation.</em></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeAPIModal()">Cancel</button>
+                <button class="btn-confirm" onclick="confirmAPIUsage()">Allow API Access</button>
+            </div>
+        </div>
     </div>
     
     <div class="container">
@@ -377,20 +544,46 @@
         const API_BASE = window.location.origin + '/api';
         let currentMap = null;
         let currentRoute = null;
+        let currentView = 'basic';
+        let apiPermissionGranted = false;
+        let pendingAPICallback = null;
+        
         let routeStats = {
             total: 0,
             withCoordinates: 0,
             withoutCoordinates: 0,
             totalWaypoints: 0,
-            totalDistance: 0
+            totalDistance: 0,
+            averageWaypoints: 0,
+            processingTime: 0
         };
         
         // Initialize the application
         async function init() {
             showStatisticsBar();
-            // Test Overpass connection first
             await testOverpassConnection();
             await loadRoutesWithProgress();
+        }
+        
+        // Show API modal
+        function showAPIModal(callback) {
+            pendingAPICallback = callback;
+            document.getElementById('apiModal').style.display = 'block';
+        }
+        
+        // Close API modal
+        function closeAPIModal() {
+            document.getElementById('apiModal').style.display = 'none';
+            pendingAPICallback = null;
+        }
+        
+        // Confirm API usage
+        function confirmAPIUsage() {
+            apiPermissionGranted = true;
+            closeAPIModal();
+            if (pendingAPICallback) {
+                pendingAPICallback();
+            }
         }
         
         // Show statistics bar
@@ -424,8 +617,16 @@
                     <p>Total Distance (km)</p>
                 </div>
                 <div class="stat-card">
+                    <h4>${routeStats.averageWaypoints}</h4>
+                    <p>Avg Waypoints</p>
+                </div>
+                <div class="stat-card">
                     <h4>${routeStats.total > 0 ? ((routeStats.withCoordinates/routeStats.total)*100).toFixed(1) : 0}%</h4>
                     <p>Success Rate</p>
+                </div>
+                <div class="stat-card">
+                    <h4>${routeStats.processingTime.toFixed(1)}s</h4>
+                    <p>Load Time</p>
                 </div>
             `;
         }
@@ -453,6 +654,15 @@
                         progressBar.style.width = `${percentage}%`;
                         progressText.textContent = `${percentage}%`;
                         currentRouteText.textContent = `Processing: ${progress.currentRoute}`;
+                        
+                        // Update statistics from progress
+                        if (progress.statistics) {
+                            routeStats = {
+                                ...routeStats,
+                                ...progress.statistics
+                            };
+                            updateStatistics();
+                        }
                     }
                 } catch (error) {
                     console.error('Error fetching progress:', error);
@@ -470,11 +680,17 @@
                 clearInterval(progressInterval);
                 progressContainer.style.display = 'none';
                 
-                // Calculate statistics
-                routeStats.total = routes.length;
-                routeStats.withCoordinates = routes.filter(r => r.hasCoordinates).length;
-                routeStats.withoutCoordinates = routes.filter(r => !r.hasCoordinates).length;
-                routeStats.totalWaypoints = routes.reduce((sum, r) => sum + (r.totalSteps || 0), 0);
+                // Final statistics update
+                const finalProgress = await fetch(`${API_BASE}/progress`);
+                const progress = await finalProgress.json();
+                if (progress.statistics) {
+                    routeStats = {
+                        total: routes.length,
+                        withCoordinates: routes.filter(r => r.hasCoordinates).length,
+                        withoutCoordinates: routes.filter(r => !r.hasCoordinates).length,
+                        ...progress.statistics
+                    };
+                }
                 
                 updateStatistics();
                 displayRouteList(routes);
@@ -563,6 +779,7 @@
                             `<p>📍 ${route.location}</p>` : ''}
                         <p>📄 ${route.filename}</p>
                         <p>🛣️ ${route.totalSteps} waypoints</p>
+                        ${route.totalDistance ? `<p>📏 ${parseFloat(route.totalDistance).toFixed(1)} km</p>` : ''}
                     </div>
                 `).join('');
             }
@@ -606,25 +823,45 @@
                 </div>
             `;
             
-            try {
-                const response = await fetch(`${API_BASE}/routes/${routeId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+            // Function to load route with API permission
+            const loadRouteWithPermission = async (enhanced = false) => {
+                try {
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    
+                    if (apiPermissionGranted) {
+                        headers['x-api-permission'] = 'confirmed';
+                    }
+                    
+                    const response = await fetch(`${API_BASE}/routes/${routeId}${enhanced ? '?enhanced=true' : ''}`, {
+                        headers: headers
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        if (error.requiresConfirmation && !apiPermissionGranted) {
+                            showAPIModal(() => {
+                                loadRouteDetails(routeId);
+                            });
+                            return;
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const routeData = await response.json();
+                    currentRoute = routeData;
+                    
+                    displayRouteDetails(routeData);
+                } catch (error) {
+                    console.error('Error loading route details:', error);
+                    document.getElementById('routeContent').innerHTML = 
+                        '<p style="color: red; padding: 20px;">Error loading route details. Please try again.</p>';
                 }
-                
-                const routeData = await response.json();
-                currentRoute = routeData;
-                
-                // Update total distance in stats
-                routeStats.totalDistance += parseFloat(routeData.totalDistance || 0);
-                updateStatistics();
-                
-                displayRouteDetails(routeData);
-            } catch (error) {
-                console.error('Error loading route details:', error);
-                document.getElementById('routeContent').innerHTML = 
-                    '<p style="color: red; padding: 20px;">Error loading route details. Please try again.</p>';
-            }
+            };
+            
+            // Load basic route data first (Overpass doesn't need permission)
+            await loadRouteWithPermission(false);
         }
         
         // Display route details
@@ -632,115 +869,15 @@
             const container = document.getElementById('routeContent');
             
             const html = `
+                <div class="view-toggle">
+                    <button class="${currentView === 'basic' ? 'active' : ''}" onclick="switchView('basic')">Basic View</button>
+                    <button class="${currentView === 'enhanced' ? 'active' : ''}" onclick="switchView('enhanced')">Enhanced Analysis</button>
+                </div>
+                
                 <div id="map"></div>
-                <div class="route-details">
-                    <!-- Route Summary -->
-                    <div class="detail-section">
-                        <h3>Route Summary</h3>
-                        <div class="info-grid">
-                            <div class="info-card">
-                                <h4>Route Information</h4>
-                                <p><strong>Depot Code:</strong> ${routeData.routeInfo.depotCode}</p>
-                                <p><strong>Consumer Code:</strong> ${routeData.routeInfo.consumerCode}</p>
-                                <p><strong>Total Distance:</strong> ${routeData.totalDistance} km</p>
-                                <p><strong>Total Waypoints:</strong> ${routeData.coordinates.length}</p>
-                            </div>
-                            
-                            <div class="info-card">
-                                <h4>Start Location</h4>
-                                <p><strong>Coordinates:</strong> ${routeData.startLocation.lat.toFixed(6)}, ${routeData.startLocation.lng.toFixed(6)}</p>
-                                ${routeData.startLocation.isPetrolPump ? '<span class="badge badge-fuel">⛽ Petrol Pump</span>' : '<span class="badge badge-info">📍 Regular Location</span>'}
-                                ${routeData.startLocation.weather ? `
-                                    <p><strong>Weather:</strong> ${routeData.startLocation.weather.description}</p>
-                                    <p><strong>Temperature:</strong> ${routeData.startLocation.weather.temperature}°C</p>
-                                ` : '<p style="font-size: 0.9em; color: #666;">Weather data not available</p>'}
-                            </div>
-                            
-                            <div class="info-card">
-                                <h4>End Location</h4>
-                                <p><strong>Coordinates:</strong> ${routeData.endLocation.lat.toFixed(6)}, ${routeData.endLocation.lng.toFixed(6)}</p>
-                                ${routeData.endLocation.isPetrolPump ? '<span class="badge badge-fuel">⛽ Petrol Pump</span>' : '<span class="badge badge-info">📍 Regular Location</span>'}
-                                ${routeData.endLocation.weather ? `
-                                    <p><strong>Weather:</strong> ${routeData.endLocation.weather.description}</p>
-                                    <p><strong>Temperature:</strong> ${routeData.endLocation.weather.temperature}°C</p>
-                                ` : '<p style="font-size: 0.9em; color: #666;">Weather data not available</p>'}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Sharp Turns -->
-                    ${routeData.sharpTurns.length > 0 ? `
-                        <div class="detail-section">
-                            <h3>⚠️ Sharp Turns (${routeData.sharpTurns.length})</h3>
-                            <div class="info-grid">
-                                ${routeData.sharpTurns.map((turn, index) => `
-                                    <div class="info-card">
-                                        <h4>Turn ${index + 1}</h4>
-                                        <p><strong>Location:</strong> ${turn.lat.toFixed(6)}, ${turn.lng.toFixed(6)}</p>
-                                        <p><strong>Angle:</strong> ${turn.angle.toFixed(1)}°</p>
-                                        <span class="badge badge-warning">Sharp Turn</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    ` : '<div class="detail-section"><p>No sharp turns detected on this route.</p></div>'}
-                    
-                    <!-- Amenities -->
-                    ${routeData.amenities.length > 0 ? `
-                        <div class="detail-section">
-                            <h3>🏪 Amenities Along Route (${routeData.amenities.length} found)</h3>
-                            <table class="amenity-table">
-                                <thead>
-                                    <tr>
-                                        <th>Type</th>
-                                        <th>Name</th>
-                                        <th>Location</th>
-                                        <th>Contact</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${routeData.amenities.slice(0, 20).map(amenity => `
-                                        <tr>
-                                            <td><span class="badge badge-info">${amenity.type}</span></td>
-                                            <td>${amenity.name}</td>
-                                            <td>${amenity.lat ? `${amenity.lat.toFixed(4)}, ${amenity.lng.toFixed(4)}` : 'N/A'}</td>
-                                            <td>
-                                                ${amenity.phone ? `📞 ${amenity.phone}` : ''}
-                                                ${amenity.website ? `<br>🌐 <a href="${amenity.website}" target="_blank">Website</a>` : ''}
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                            ${routeData.amenities.length > 20 ? `<p style="text-align: center; margin-top: 10px;">Showing first 20 of ${routeData.amenities.length} amenities</p>` : ''}
-                        </div>
-                    ` : '<div class="detail-section"><p>No amenities data available. This might be due to Overpass API limitations or no amenities in the route area.</p></div>'}
-                    
-                    <!-- Waypoints Table -->
-                    <div class="detail-section">
-                        <h3>📍 Route Waypoints</h3>
-                        <table class="amenity-table">
-                            <thead>
-                                <tr>
-                                    <th>Step</th>
-                                    <th>Latitude</th>
-                                    <th>Longitude</th>
-                                    <th>Additional Info</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${routeData.coordinates.slice(0, 10).map((coord, index) => `
-                                    <tr>
-                                        <td>${coord.stepId || index + 1}</td>
-                                        <td>${coord.lat.toFixed(6)}</td>
-                                        <td>${coord.lng.toFixed(6)}</td>
-                                        <td>${coord.Route_Type || coord.route_type || '-'}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                        ${routeData.coordinates.length > 10 ? `<p style="text-align: center; margin-top: 10px;">Showing first 10 of ${routeData.coordinates.length} waypoints</p>` : ''}
-                    </div>
+                
+                <div class="route-details" id="routeDetailsContent">
+                    ${currentView === 'basic' ? getBasicView(routeData) : getEnhancedView(routeData)}
                 </div>
             `;
             
@@ -750,6 +887,303 @@
             setTimeout(() => {
                 initializeMap(routeData);
             }, 100);
+        }
+        
+        // Get basic view HTML
+        function getBasicView(routeData) {
+            return `
+                <!-- Route Summary -->
+                <div class="detail-section">
+                    <h3>Route Summary</h3>
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <h4>Route Information</h4>
+                            <p><strong>Depot Code:</strong> ${routeData.routeInfo.depotCode}</p>
+                            <p><strong>Consumer Code:</strong> ${routeData.routeInfo.consumerCode}</p>
+                            <p><strong>Total Distance:</strong> ${routeData.totalDistance} km</p>
+                            <p><strong>Total Waypoints:</strong> ${routeData.coordinates.length}</p>
+                        </div>
+                        
+                        <div class="info-card">
+                            <h4>Start Location</h4>
+                            <p><strong>Coordinates:</strong> ${routeData.startLocation.lat.toFixed(6)}, ${routeData.startLocation.lng.toFixed(6)}</p>
+                            ${routeData.startLocation.isPetrolPump ? '<span class="badge badge-fuel">⛽ Petrol Pump</span>' : '<span class="badge badge-info">📍 Regular Location</span>'}
+                            ${routeData.startLocation.weather ? `
+                                <p><strong>Weather:</strong> ${routeData.startLocation.weather.description}</p>
+                                <p><strong>Temperature:</strong> ${routeData.startLocation.weather.temperature}°C</p>
+                            ` : '<p style="font-size: 0.9em; color: #666;">Weather data requires API permission</p>'}
+                        </div>
+                        
+                        <div class="info-card">
+                            <h4>End Location</h4>
+                            <p><strong>Coordinates:</strong> ${routeData.endLocation.lat.toFixed(6)}, ${routeData.endLocation.lng.toFixed(6)}</p>
+                            ${routeData.endLocation.isPetrolPump ? '<span class="badge badge-fuel">⛽ Petrol Pump</span>' : '<span class="badge badge-info">📍 Regular Location</span>'}
+                            ${routeData.endLocation.weather ? `
+                                <p><strong>Weather:</strong> ${routeData.endLocation.weather.description}</p>
+                                <p><strong>Temperature:</strong> ${routeData.endLocation.weather.temperature}°C</p>
+                            ` : '<p style="font-size: 0.9em; color: #666;">Weather data requires API permission</p>'}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sharp Turns -->
+                ${routeData.sharpTurns && routeData.sharpTurns.length > 0 ? `
+                    <div class="detail-section">
+                        <h3>⚠️ Sharp Turns (${routeData.sharpTurns.length})</h3>
+                        <div style="overflow-x: auto;">
+                            <table class="amenity-table">
+                                <thead>
+                                    <tr>
+                                        <th>Turn #</th>
+                                        <th>Location</th>
+                                        <th>Angle</th>
+                                        <th>Risk Level</th>
+                                        <th>Map Link</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${routeData.sharpTurns.map((turn, index) => `
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td>${turn.lat.toFixed(6)}, ${turn.lng.toFixed(6)}</td>
+                                            <td>${turn.angle.toFixed(1)}°</td>
+                                            <td><span class="badge badge-warning">${turn.angle > 90 ? 'High' : 'Medium'}</span></td>
+                                            <td><a href="https://www.google.com/maps?q=${turn.lat},${turn.lng}" target="_blank">View on Map</a></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                ` : '<div class="detail-section"><p>No sharp turns detected on this route.</p></div>'}
+                
+                <!-- Waypoints Table -->
+                <div class="detail-section">
+                    <h3>📍 All Route Waypoints (${routeData.coordinates.length} total)</h3>
+                    <button onclick="exportToCSV('waypoints', ${JSON.stringify(routeData.coordinates).replace(/"/g, '&quot;')})" style="margin-bottom: 10px; padding: 5px 15px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer;">Export to CSV</button>
+                    <div style="overflow-x: auto; max-height: 400px;">
+                        <table class="amenity-table">
+                            <thead>
+                                <tr>
+                                    <th>Step</th>
+                                    <th>Latitude</th>
+                                    <th>Longitude</th>
+                                    <th>Google Maps</th>
+                                    <th>Additional Info</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${routeData.coordinates.map((coord, index) => `
+                                    <tr>
+                                        <td>${coord.stepId || index + 1}</td>
+                                        <td>${coord.lat.toFixed(6)}</td>
+                                        <td>${coord.lng.toFixed(6)}</td>
+                                        <td><a href="https://www.google.com/maps?q=${coord.lat},${coord.lng}" target="_blank">View</a></td>
+                                        <td>${coord.Route_Type || coord.route_type || '-'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Get enhanced view HTML
+        function getEnhancedView(routeData) {
+            if (!routeData.enhancedAnalysis) {
+                return `
+                    <div class="detail-section enhanced-section">
+                        <h3>Enhanced Analysis <span class="enhanced-badge">PREMIUM</span></h3>
+                        <p>Enhanced analysis requires API permissions. Click the button below to enable enhanced features.</p>
+                        <button onclick="loadEnhancedAnalysis('${routeData.routeInfo.filename}')" style="margin-top: 10px; padding: 10px 20px; background: #1e3c72; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            Enable Enhanced Analysis
+                        </button>
+                    </div>
+                `;
+            }
+            
+            const { enhancedAnalysis } = routeData;
+            
+            return `
+                <!-- Enhanced Traffic Analysis -->
+                ${enhancedAnalysis.trafficData && enhancedAnalysis.trafficData.length > 0 ? `
+                    <div class="detail-section enhanced-section">
+                        <h3>🚦 Real-Time Traffic Analysis <span class="enhanced-badge">LIVE</span></h3>
+                        <button onclick="exportToCSV('traffic', ${JSON.stringify(enhancedAnalysis.trafficData).replace(/"/g, '&quot;')})" style="margin-bottom: 10px; padding: 5px 15px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer;">Export to CSV</button>
+                        <div style="overflow-x: auto;">
+                            <table class="amenity-table">
+                                <thead>
+                                    <tr>
+                                        <th>Location</th>
+                                        <th>Current Speed</th>
+                                        <th>Free Flow Speed</th>
+                                        <th>Congestion Level</th>
+                                        <th>Confidence</th>
+                                        <th>Google Maps</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${enhancedAnalysis.trafficData.map(traffic => `
+                                        <tr>
+                                            <td>${traffic.lat.toFixed(6)}, ${traffic.lng.toFixed(6)}</td>
+                                            <td>${traffic.currentSpeed} km/h</td>
+                                            <td>${traffic.freeFlowSpeed} km/h</td>
+                                            <td>
+                                                <span class="badge ${traffic.congestionLevel > 50 ? 'badge-warning' : 'badge-info'}">
+                                                    ${traffic.congestionLevel}%
+                                                </span>
+                                            </td>
+                                            <td>${traffic.confidence}%</td>
+                                            <td><a href="https://www.google.com/maps?q=${traffic.lat},${traffic.lng}" target="_blank">View</a></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <!-- Accident Prone Areas -->
+                ${enhancedAnalysis.accidentProneAreas && enhancedAnalysis.accidentProneAreas.length > 0 ? `
+                    <div class="detail-section enhanced-section">
+                        <h3>⚠️ Accident Prone Areas <span class="enhanced-badge">SAFETY</span></h3>
+                        <button onclick="exportToCSV('accidents', ${JSON.stringify(enhancedAnalysis.accidentProneAreas).replace(/"/g, '&quot;')})" style="margin-bottom: 10px; padding: 5px 15px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer;">Export to CSV</button>
+                        <div style="overflow-x: auto;">
+                            <table class="amenity-table">
+                                <thead>
+                                    <tr>
+                                        <th>Location</th>
+                                        <th>Turn Angle</th>
+                                        <th>Risk Level</th>
+                                        <th>Address</th>
+                                        <th>Google Maps</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${enhancedAnalysis.accidentProneAreas.map(area => `
+                                        <tr>
+                                            <td>${area.lat.toFixed(6)}, ${area.lng.toFixed(6)}</td>
+                                            <td>${area.angle.toFixed(1)}°</td>
+                                            <td>
+                                                <span class="badge ${area.riskLevel === 'high' ? 'badge-warning' : 'badge-info'}">
+                                                    ${area.riskLevel.toUpperCase()}
+                                                </span>
+                                            </td>
+                                            <td>${area.address}</td>
+                                            <td><a href="https://www.google.com/maps?q=${area.lat},${area.lng}" target="_blank">View</a></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <!-- Summary Stats -->
+                <div class="detail-section enhanced-section">
+                    <h3>📊 Enhanced Analysis Summary</h3>
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <h4>Traffic Analysis</h4>
+                            <p><strong>Points Analyzed:</strong> ${enhancedAnalysis.trafficData?.length || 0}</p>
+                            <p><strong>High Congestion:</strong> ${enhancedAnalysis.trafficData?.filter(t => t.congestionLevel > 50).length || 0}</p>
+                        </div>
+                        <div class="info-card">
+                            <h4>Safety Analysis</h4>
+                            <p><strong>Sharp Turns:</strong> ${routeData.sharpTurns?.length || 0}</p>
+                            <p><strong>High Risk Areas:</strong> ${enhancedAnalysis.accidentProneAreas?.filter(a => a.riskLevel === 'high').length || 0}</p>
+                        </div>
+                        <div class="info-card">
+                            <h4>Data Quality</h4>
+                            <p><strong>API Status:</strong> <span class="badge badge-info">Active</span></p>
+                            <p><strong>Last Updated:</strong> ${new Date().toLocaleString()}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Switch view
+        function switchView(view) {
+            currentView = view;
+            if (currentRoute) {
+                displayRouteDetails(currentRoute);
+            }
+        }
+        
+        // Load enhanced analysis
+        async function loadEnhancedAnalysis(routeId) {
+            if (!apiPermissionGranted) {
+                showAPIModal(() => {
+                    loadEnhancedAnalysis(routeId);
+                });
+                return;
+            }
+            
+            showNotification('Loading enhanced analysis...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/routes/${routeId}?enhanced=true`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-permission': 'confirmed',
+                        'x-user-id': 'admin'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load enhanced analysis');
+                }
+                
+                const routeData = await response.json();
+                currentRoute = routeData;
+                displayRouteDetails(routeData);
+                showNotification('Enhanced analysis loaded successfully!', 'success');
+            } catch (error) {
+                console.error('Error loading enhanced analysis:', error);
+                showNotification('Failed to load enhanced analysis', 'error');
+            }
+        }
+        
+        // Export to CSV
+        function exportToCSV(dataType, data) {
+            let csvContent = '';
+            
+            switch(dataType) {
+                case 'waypoints':
+                    csvContent = 'Step,Latitude,Longitude,Route_Type\n';
+                    data.forEach((coord, index) => {
+                        csvContent += `${coord.stepId || index + 1},${coord.lat},${coord.lng},${coord.Route_Type || coord.route_type || ''}\n`;
+                    });
+                    break;
+                    
+                case 'traffic':
+                    csvContent = 'Latitude,Longitude,Current_Speed,Free_Flow_Speed,Congestion_Level,Confidence\n';
+                    data.forEach(traffic => {
+                        csvContent += `${traffic.lat},${traffic.lng},${traffic.currentSpeed},${traffic.freeFlowSpeed},${traffic.congestionLevel},${traffic.confidence}\n`;
+                    });
+                    break;
+                    
+                case 'accidents':
+                    csvContent = 'Latitude,Longitude,Turn_Angle,Risk_Level,Address\n';
+                    data.forEach(area => {
+                        csvContent += `${area.lat},${area.lng},${area.angle},${area.riskLevel},"${area.address}"\n`;
+                    });
+                    break;
+            }
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `route_${dataType}_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification(`Exported ${dataType} data to CSV`, 'success');
         }
         
         // Initialize Leaflet map
@@ -770,13 +1204,29 @@
                 attribution: '© OpenStreetMap contributors'
             }).addTo(currentMap);
             
-            // Create route polyline
+            // Create route polyline with ALL waypoints
             const routeCoordinates = routeData.coordinates.map(coord => [coord.lat, coord.lng]);
             const routeLine = L.polyline(routeCoordinates, {
                 color: '#1e3c72',
                 weight: 4,
                 opacity: 0.8
             }).addTo(currentMap);
+            
+            // Add waypoint markers (sample to avoid overcrowding)
+            const waypointInterval = Math.max(1, Math.floor(routeData.coordinates.length / 30));
+            routeData.coordinates.forEach((coord, index) => {
+                if (index % waypointInterval === 0 && index !== 0 && index !== routeData.coordinates.length - 1) {
+                    L.circleMarker([coord.lat, coord.lng], {
+                        radius: 4,
+                        fillColor: '#666',
+                        color: '#fff',
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(currentMap)
+                      .bindPopup(`Waypoint ${coord.stepId || index + 1}`);
+                }
+            });
             
             // Add start marker
             const startIcon = L.divIcon({
@@ -809,38 +1259,40 @@
                          Lng: ${routeData.endLocation.lng.toFixed(6)}`);
             
             // Add sharp turn markers
-            routeData.sharpTurns.forEach((turn, index) => {
-                const turnIcon = L.divIcon({
-                    html: '<div style="background: #ff9800; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">⚠</div>',
-                    iconSize: [25, 25],
-                    className: 'custom-div-icon'
+            if (routeData.sharpTurns) {
+                routeData.sharpTurns.forEach((turn, index) => {
+                    const turnIcon = L.divIcon({
+                        html: '<div style="background: #ff9800; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">⚠</div>',
+                        iconSize: [25, 25],
+                        className: 'custom-div-icon'
+                    });
+                    
+                    L.marker([turn.lat, turn.lng], {
+                        icon: turnIcon
+                    }).addTo(currentMap)
+                      .bindPopup(`<strong>Sharp Turn ${index + 1}</strong><br>
+                                 Angle: ${turn.angle.toFixed(1)}°<br>
+                                 Location: ${turn.lat.toFixed(6)}, ${turn.lng.toFixed(6)}`);
                 });
-                
-                L.marker([turn.lat, turn.lng], {
-                    icon: turnIcon
-                }).addTo(currentMap)
-                  .bindPopup(`<strong>Sharp Turn ${index + 1}</strong><br>
-                             Angle: ${turn.angle.toFixed(1)}°<br>
-                             Location: ${turn.lat.toFixed(6)}, ${turn.lng.toFixed(6)}`);
-            });
+            }
             
-            // Add amenity markers (limit to prevent overcrowding)
-            routeData.amenities.slice(0, 30).forEach(amenity => {
-                if (amenity.lat && amenity.lng) {
-                    L.circleMarker([amenity.lat, amenity.lng], {
-                        radius: 6,
-                        fillColor: '#2196f3',
+            // Add traffic markers if in enhanced view
+            if (currentView === 'enhanced' && routeData.enhancedAnalysis?.trafficData) {
+                routeData.enhancedAnalysis.trafficData.forEach(traffic => {
+                    const color = traffic.congestionLevel > 50 ? '#f44336' : '#4caf50';
+                    L.circleMarker([traffic.lat, traffic.lng], {
+                        radius: 8,
+                        fillColor: color,
                         color: '#fff',
                         weight: 2,
                         opacity: 1,
                         fillOpacity: 0.8
                     }).addTo(currentMap)
-                      .bindPopup(`<strong>${amenity.name}</strong><br>
-                                 Type: ${amenity.type}<br>
-                                 ${amenity.phone ? `Phone: ${amenity.phone}<br>` : ''}
-                                 ${amenity.address ? `Address: ${amenity.address}` : ''}`);
-                }
-            });
+                      .bindPopup(`<strong>Traffic Data</strong><br>
+                                 Speed: ${traffic.currentSpeed}/${traffic.freeFlowSpeed} km/h<br>
+                                 Congestion: ${traffic.congestionLevel}%`);
+                });
+            }
             
             // Fit map to route bounds
             currentMap.fitBounds(routeLine.getBounds().pad(0.1));
