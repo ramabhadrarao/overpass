@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Route Management System v2.0</title>
+    <title>Route Management System v3.0</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -22,7 +22,7 @@
         }
         
         .container {
-            max-width: 1600px;
+            max-width: 1800px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -139,6 +139,9 @@
             color: #1e3c72;
             margin-bottom: 15px;
             font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .info-grid {
@@ -183,27 +186,35 @@
             color: white;
         }
         
+        .badge-danger {
+            background: #f44336;
+            color: white;
+        }
+        
         .badge-info {
             background: #2196f3;
             color: white;
         }
         
-        .amenity-table {
+        .data-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
         }
         
-        .amenity-table th,
-        .amenity-table td {
+        .data-table th,
+        .data-table td {
             padding: 10px;
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
         }
         
-        .amenity-table th {
+        .data-table th {
             background: #f0f0f0;
             font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         
         .loading {
@@ -290,34 +301,46 @@
             font-weight: 500;
         }
         
-        .loading-routes {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .loading-routes .spinner {
-            margin-bottom: 10px;
-        }
-        
-        .view-toggle {
+        .category-tabs {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         
-        .view-toggle button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            background: #e0e0e0;
-            color: #333;
+        .category-tab {
+            padding: 8px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            background: white;
             cursor: pointer;
             transition: all 0.3s ease;
+            font-size: 0.9em;
         }
         
-        .view-toggle button.active {
+        .category-tab:hover {
+            background: #f8f9fa;
+        }
+        
+        .category-tab.active {
             background: #1e3c72;
             color: white;
+            border-color: #1e3c72;
+        }
+        
+        .export-btn {
+            float: right;
+            padding: 5px 15px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .export-btn:hover {
+            background: #45a049;
         }
         
         .modal {
@@ -393,25 +416,57 @@
             background: #da190b;
         }
         
-        .enhanced-section {
-            background: #e8f0fe;
-            border: 2px solid #1e3c72;
+        .risk-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .risk-low { background: #4caf50; }
+        .risk-medium { background: #ff9800; }
+        .risk-high { background: #f44336; }
+        .risk-critical { background: #9c27b0; }
+        
+        .table-container {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-style: italic;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
             margin-bottom: 20px;
         }
         
-        .enhanced-section h3 {
-            color: #1e3c72;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            text-align: center;
         }
         
-        .enhanced-badge {
-            background: #1e3c72;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.8em;
+        .summary-card h3 {
+            font-size: 2.5em;
+            margin: 0;
+            color: #1e3c72;
+        }
+        
+        .summary-card p {
+            margin: 5px 0 0 0;
+            color: #666;
         }
         
         @keyframes spin {
@@ -427,12 +482,6 @@
         @keyframes slideIn {
             from { transform: translateY(-50px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
         }
         
         .no-route {
@@ -467,8 +516,8 @@
 </head>
 <body>
     <div class="header">
-        <h1>Route Management System v2.0</h1>
-        <p>Track routes, analyze paths, and monitor logistics</p>
+        <h1>Route Management System v3.0</h1>
+        <p>Comprehensive Route Analysis & Monitoring</p>
         <div class="admin-info">
             <span>👤 Default Login: admin / admin123</span>
         </div>
@@ -484,11 +533,11 @@
                 <p id="apiModalMessage">This action requires access to external APIs.</p>
                 <p><strong>APIs that will be used:</strong></p>
                 <ul id="apiList">
-                    <li>Weather API (OpenWeather)</li>
-                    <li>Traffic API (TomTom)</li>
-                    <li>Geocoding API (Mapbox)</li>
+                    <li>Weather API (OpenWeather) - For weather conditions</li>
+                    <li>Traffic API (TomTom) - For real-time traffic data</li>
+                    <li>Geocoding API (Mapbox) - For address resolution</li>
                 </ul>
-                <p><em>Note: Overpass API (for amenities) does not require confirmation.</em></p>
+                <p><em>Note: Overpass API (for roads, amenities) does not require confirmation.</em></p>
             </div>
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeAPIModal()">Cancel</button>
@@ -499,12 +548,12 @@
     
     <div class="container">
         <div class="statistics-bar" id="statisticsBar" style="display: none;">
-            <h2 style="margin: 0 0 15px 0; color: #1e3c72;">Route Statistics</h2>
+            <h2 style="margin: 0 0 15px 0; color: #1e3c72;">Route Processing Statistics</h2>
             <div class="stat-grid" id="statsGrid">
                 <!-- Stats will be populated here -->
             </div>
             <div class="progress-container" id="progressContainer" style="display: none;">
-                <p style="margin-bottom: 5px;">Loading Routes...</p>
+                <p style="margin-bottom: 5px;">Processing Routes & Analyzing Data...</p>
                 <div class="progress-bar-bg">
                     <div class="progress-bar-fill" id="progressBar" style="width: 0%">
                         <span class="progress-text" id="progressText">0%</span>
@@ -530,7 +579,7 @@
                     <div class="no-route">
                         <i>📍</i>
                         <h3>Select a Route</h3>
-                        <p>Choose a route from the list to view details</p>
+                        <p>Choose a route from the list to view comprehensive analysis</p>
                     </div>
                 </div>
             </div>
@@ -544,9 +593,10 @@
         const API_BASE = window.location.origin + '/api';
         let currentMap = null;
         let currentRoute = null;
-        let currentView = 'basic';
+        let currentCategory = 'summary';
         let apiPermissionGranted = false;
         let pendingAPICallback = null;
+        let currentAnalysisData = null;
         
         let routeStats = {
             total: 0,
@@ -556,6 +606,20 @@
             totalDistance: 0,
             averageWaypoints: 0,
             processingTime: 0
+        };
+        
+        // Data categories
+        const DATA_CATEGORIES = {
+            summary: { name: 'Route Overview', icon: '📊' },
+            sharpTurns: { name: 'Sharp Turns', icon: '⚠️', collection: 'sharp_turns' },
+            blindSpots: { name: 'Blind Spots', icon: '👁️', collection: 'blind_spots' },
+            accidentProneAreas: { name: 'Accident Prone Zones', icon: '🛑', collection: 'accident_prone_areas' },
+            roadConditions: { name: 'Road Conditions', icon: '🛣️', collection: 'road_conditions' },
+            weatherConditions: { name: 'Weather Conditions', icon: '🌧️', collection: 'weather_conditions' },
+            trafficData: { name: 'Traffic Patterns', icon: '🚦', collection: 'traffic_data' },
+            emergencyServices: { name: 'Emergency Services', icon: '🏥', collection: 'emergency_services' },
+            networkCoverages: { name: 'Network Coverage', icon: '📶', collection: 'network_coverages' },
+            ecoSensitiveZones: { name: 'Eco-Sensitive Zones', icon: '🌿', collection: 'eco_sensitive_zones' }
         };
         
         // Initialize the application
@@ -626,7 +690,7 @@
                 </div>
                 <div class="stat-card">
                     <h4>${routeStats.processingTime.toFixed(1)}s</h4>
-                    <p>Load Time</p>
+                    <p>Processing Time</p>
                 </div>
             `;
         }
@@ -653,7 +717,7 @@
                         
                         progressBar.style.width = `${percentage}%`;
                         progressText.textContent = `${percentage}%`;
-                        currentRouteText.textContent = `Processing: ${progress.currentRoute}`;
+                        currentRouteText.textContent = `Processing: ${progress.currentRoute} (Analyzing route data...)`;
                         
                         // Update statistics from progress
                         if (progress.statistics) {
@@ -700,7 +764,7 @@
                 clearInterval(progressInterval);
                 progressContainer.style.display = 'none';
                 document.getElementById('routeListContainer').innerHTML = 
-                    '<p style="color: red;">Error loading routes. Please check if the server is running and route_data folder exists.</p>';
+                    '<p style="color: red;">Error loading routes. Please check if the server is running and MongoDB is connected.</p>';
             }
         }
         
@@ -728,7 +792,7 @@
                 top: 20px;
                 right: 20px;
                 padding: 15px 20px;
-                background: ${type === 'error' ? '#f44336' : type === 'warning' ? '#ff9800' : '#2196f3'};
+                background: ${type === 'error' ? '#f44336' : type === 'warning' ? '#ff9800' : type === 'success' ? '#4caf50' : '#2196f3'};
                 color: white;
                 border-radius: 5px;
                 box-shadow: 0 2px 5px rgba(0,0,0,0.2);
@@ -771,7 +835,7 @@
             if (routesWithCoords.length > 0) {
                 html += '<h3 style="margin: 10px 0; color: #2a5298;">Available Routes</h3>';
                 html += routesWithCoords.map(route => `
-                    <div class="route-item" onclick="loadRouteDetails('${route.id}')">
+                    <div class="route-item" onclick="loadRouteAnalysis('${route.id}')">
                         <h3>${route.depotCode} → ${route.consumerCode}</h3>
                         ${route.customerName && route.customerName !== 'Unknown Customer' ? 
                             `<p style="font-weight: 500; color: #2a5298;">🏢 ${route.customerName}</p>` : ''}
@@ -784,7 +848,7 @@
                 `).join('');
             }
             
-            // Routes without coordinates (from CSV only)
+            // Routes without coordinates
             if (routesWithoutCoords.length > 0) {
                 html += '<h3 style="margin: 20px 0 10px 0; color: #666;">Routes Missing Coordinate Files</h3>';
                 html += routesWithoutCoords.map(route => `
@@ -801,9 +865,9 @@
             container.innerHTML = html;
         }
         
-        // Load detailed route information
-        async function loadRouteDetails(routeId) {
-            // Don't load if it's a pending route without coordinates
+        // Load route analysis
+        async function loadRouteAnalysis(routeId) {
+            // Don't load if it's a pending route
             if (routeId.startsWith('pending_')) {
                 showNotification('This route does not have coordinate data yet.', 'warning');
                 return;
@@ -819,167 +883,255 @@
             document.getElementById('routeContent').innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    <p>Loading route details...</p>
+                    <p>Loading comprehensive route analysis...</p>
                 </div>
             `;
             
-            // Function to load route with API permission
-            const loadRouteWithPermission = async (enhanced = false) => {
-                try {
-                    const headers = {
-                        'Content-Type': 'application/json'
-                    };
-                    
-                    if (apiPermissionGranted) {
-                        headers['x-api-permission'] = 'confirmed';
-                    }
-                    
-                    const response = await fetch(`${API_BASE}/routes/${routeId}${enhanced ? '?enhanced=true' : ''}`, {
-                        headers: headers
-                    });
-                    
-                    if (!response.ok) {
-                        const error = await response.json();
-                        if (error.requiresConfirmation && !apiPermissionGranted) {
-                            showAPIModal(() => {
-                                loadRouteDetails(routeId);
-                            });
-                            return;
-                        }
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    const routeData = await response.json();
-                    currentRoute = routeData;
-                    
-                    displayRouteDetails(routeData);
-                } catch (error) {
-                    console.error('Error loading route details:', error);
-                    document.getElementById('routeContent').innerHTML = 
-                        '<p style="color: red; padding: 20px;">Error loading route details. Please try again.</p>';
+            try {
+                // First load basic analysis (Overpass data only)
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                const response = await fetch(`${API_BASE}/routes/${routeId}/analysis`, {
+                    headers: headers
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-            };
-            
-            // Load basic route data first (Overpass doesn't need permission)
-            await loadRouteWithPermission(false);
+                
+                const analysisData = await response.json();
+                currentRoute = analysisData.route;
+                currentAnalysisData = analysisData;
+                
+                displayRouteAnalysis(analysisData);
+                
+                // Load enhanced data if permission granted
+                if (apiPermissionGranted) {
+                    loadEnhancedData(routeId);
+                }
+                
+            } catch (error) {
+                console.error('Error loading route analysis:', error);
+                document.getElementById('routeContent').innerHTML = 
+                    '<p style="color: red; padding: 20px;">Error loading route analysis. Please try again.</p>';
+            }
         }
         
-        // Display route details
-        function displayRouteDetails(routeData) {
+        // Load enhanced data (traffic, weather)
+        async function loadEnhancedData(routeId) {
+            try {
+                const response = await fetch(`${API_BASE}/routes/${routeId}/analysis?enhanced=true`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-permission': 'confirmed',
+                        'x-user-id': 'admin'
+                    }
+                });
+                
+                if (response.ok) {
+                    const enhancedData = await response.json();
+                    currentAnalysisData = enhancedData;
+                    
+                    // Update display with enhanced data
+                    if (currentCategory === 'trafficData' || currentCategory === 'weatherConditions') {
+                        switchCategory(currentCategory);
+                    }
+                    
+                    showNotification('Enhanced data loaded successfully!', 'success');
+                }
+            } catch (error) {
+                console.error('Error loading enhanced data:', error);
+            }
+        }
+        
+        // Display route analysis
+        function displayRouteAnalysis(analysisData) {
             const container = document.getElementById('routeContent');
             
             const html = `
-                <div class="view-toggle">
-                    <button class="${currentView === 'basic' ? 'active' : ''}" onclick="switchView('basic')">Basic View</button>
-                    <button class="${currentView === 'enhanced' ? 'active' : ''}" onclick="switchView('enhanced')">Enhanced Analysis</button>
+                <div class="category-tabs">
+                    ${Object.entries(DATA_CATEGORIES).map(([key, category]) => `
+                        <div class="category-tab ${currentCategory === key ? 'active' : ''}" 
+                             onclick="switchCategory('${key}')">
+                            ${category.icon} ${category.name}
+                        </div>
+                    `).join('')}
                 </div>
                 
                 <div id="map"></div>
                 
-                <div class="route-details" id="routeDetailsContent">
-                    ${currentView === 'basic' ? getBasicView(routeData) : getEnhancedView(routeData)}
+                <div class="route-details" id="categoryContent">
+                    ${getCategoryContent(currentCategory, analysisData)}
                 </div>
             `;
             
             container.innerHTML = html;
             
-            // Initialize map after DOM is updated
+            // Initialize map
             setTimeout(() => {
-                initializeMap(routeData);
+                initializeMap(analysisData);
             }, 100);
         }
         
-        // Get basic view HTML
-        function getBasicView(routeData) {
+        // Switch category
+        function switchCategory(category) {
+            currentCategory = category;
+            
+            // Update active tab
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            // Update content
+            document.getElementById('categoryContent').innerHTML = 
+                getCategoryContent(category, currentAnalysisData);
+            
+            // Update map markers
+            updateMapMarkers(category);
+            
+            // Check if we need enhanced data
+            if ((category === 'trafficData' || category === 'weatherConditions') && 
+                !apiPermissionGranted && !currentAnalysisData[category]) {
+                showAPIModal(() => {
+                    loadEnhancedData(currentRoute._id);
+                });
+            }
+        }
+        
+        // Get category content
+        function getCategoryContent(category, data) {
+            switch (category) {
+                case 'summary':
+                    return getRouteSummary(data);
+                case 'sharpTurns':
+                    return getSharpTurnsContent(data.sharpTurns || []);
+                case 'blindSpots':
+                    return getBlindSpotsContent(data.blindSpots || []);
+                case 'accidentProneAreas':
+                    return getAccidentProneContent(data.accidentProneAreas || []);
+                case 'roadConditions':
+                    return getRoadConditionsContent(data.roadConditions || []);
+                case 'weatherConditions':
+                    return getWeatherContent(data.weatherConditions || []);
+                case 'trafficData':
+                    return getTrafficContent(data.trafficData || []);
+                case 'emergencyServices':
+                    return getEmergencyServicesContent(data.emergencyServices || []);
+                case 'networkCoverages':
+                    return getNetworkCoverageContent(data.networkCoverages || []);
+                case 'ecoSensitiveZones':
+                    return getEcoZonesContent(data.ecoSensitiveZones || []);
+                default:
+                    return '<p>Select a category to view data</p>';
+            }
+        }
+        
+        // Get route summary
+        function getRouteSummary(data) {
+            const route = data.route;
+            if (!route) return '<p>No route data available</p>';
+            
             return `
-                <!-- Route Summary -->
                 <div class="detail-section">
-                    <h3>Route Summary</h3>
-                    <div class="info-grid">
+                    <h3>📊 Route Overview / Executive Summary</h3>
+                    
+                    <div class="summary-cards">
+                        <div class="summary-card">
+                            <h3>${route.totalDistance ? route.totalDistance.toFixed(1) : '0'}</h3>
+                            <p>Total Distance (km)</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3>${route.estimatedDuration ? (route.estimatedDuration/60).toFixed(1) : '0'}</h3>
+                            <p>Est. Duration (hours)</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3>${route.totalWaypoints || 0}</h3>
+                            <p>Total Waypoints</p>
+                        </div>
+                        <div class="summary-card">
+                            <h3>${data.sharpTurns?.length || 0}</h3>
+                            <p>Sharp Turns</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-grid" style="margin-top: 20px;">
                         <div class="info-card">
                             <h4>Route Information</h4>
-                            <p><strong>Depot Code:</strong> ${routeData.routeInfo.depotCode}</p>
-                            <p><strong>Consumer Code:</strong> ${routeData.routeInfo.consumerCode}</p>
-                            <p><strong>Total Distance:</strong> ${routeData.totalDistance} km</p>
-                            <p><strong>Total Waypoints:</strong> ${routeData.coordinates.length}</p>
+                            <p><strong>Route Name:</strong> ${route.routeName}</p>
+                            <p><strong>From Code:</strong> ${route.fromCode}</p>
+                            <p><strong>To Code:</strong> ${route.toCode}</p>
+                            <p><strong>Customer:</strong> ${route.customerName || 'N/A'}</p>
+                            <p><strong>Location:</strong> ${route.location || 'N/A'}</p>
                         </div>
                         
                         <div class="info-card">
-                            <h4>Start Location</h4>
-                            <p><strong>Coordinates:</strong> ${routeData.startLocation.lat.toFixed(6)}, ${routeData.startLocation.lng.toFixed(6)}</p>
-                            ${routeData.startLocation.isPetrolPump ? '<span class="badge badge-fuel">⛽ Petrol Pump</span>' : '<span class="badge badge-info">📍 Regular Location</span>'}
-                            ${routeData.startLocation.weather ? `
-                                <p><strong>Weather:</strong> ${routeData.startLocation.weather.description}</p>
-                                <p><strong>Temperature:</strong> ${routeData.startLocation.weather.temperature}°C</p>
-                            ` : '<p style="font-size: 0.9em; color: #666;">Weather data requires API permission</p>'}
+                            <h4>Start Point</h4>
+                            <p><strong>Address:</strong> ${route.fromAddress}</p>
+                            <p><strong>Coordinates:</strong> ${route.fromCoordinates.coordinates[1].toFixed(6)}, ${route.fromCoordinates.coordinates[0].toFixed(6)}</p>
+                            <p><a href="https://www.google.com/maps?q=${route.fromCoordinates.coordinates[1]},${route.fromCoordinates.coordinates[0]}" target="_blank">View on Google Maps</a></p>
                         </div>
                         
                         <div class="info-card">
-                            <h4>End Location</h4>
-                            <p><strong>Coordinates:</strong> ${routeData.endLocation.lat.toFixed(6)}, ${routeData.endLocation.lng.toFixed(6)}</p>
-                            ${routeData.endLocation.isPetrolPump ? '<span class="badge badge-fuel">⛽ Petrol Pump</span>' : '<span class="badge badge-info">📍 Regular Location</span>'}
-                            ${routeData.endLocation.weather ? `
-                                <p><strong>Weather:</strong> ${routeData.endLocation.weather.description}</p>
-                                <p><strong>Temperature:</strong> ${routeData.endLocation.weather.temperature}°C</p>
-                            ` : '<p style="font-size: 0.9em; color: #666;">Weather data requires API permission</p>'}
+                            <h4>End Point</h4>
+                            <p><strong>Address:</strong> ${route.toAddress}</p>
+                            <p><strong>Coordinates:</strong> ${route.toCoordinates.coordinates[1].toFixed(6)}, ${route.toCoordinates.coordinates[0].toFixed(6)}</p>
+                            <p><a href="https://www.google.com/maps?q=${route.toCoordinates.coordinates[1]},${route.toCoordinates.coordinates[0]}" target="_blank">View on Google Maps</a></p>
+                        </div>
+                        
+                        <div class="info-card">
+                            <h4>Risk Summary</h4>
+                            <p><span class="risk-indicator risk-high"></span><strong>High Risk:</strong> ${data.accidentProneAreas?.filter(a => a.riskScore >= 8).length || 0} areas</p>
+                            <p><span class="risk-indicator risk-medium"></span><strong>Medium Risk:</strong> ${data.accidentProneAreas?.filter(a => a.riskScore >= 5 && a.riskScore < 8).length || 0} areas</p>
+                            <p><span class="risk-indicator risk-low"></span><strong>Low Risk:</strong> ${data.accidentProneAreas?.filter(a => a.riskScore < 5).length || 0} areas</p>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Sharp Turns -->
-                ${routeData.sharpTurns && routeData.sharpTurns.length > 0 ? `
-                    <div class="detail-section">
-                        <h3>⚠️ Sharp Turns (${routeData.sharpTurns.length})</h3>
-                        <div style="overflow-x: auto;">
-                            <table class="amenity-table">
-                                <thead>
-                                    <tr>
-                                        <th>Turn #</th>
-                                        <th>Location</th>
-                                        <th>Angle</th>
-                                        <th>Risk Level</th>
-                                        <th>Map Link</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${routeData.sharpTurns.map((turn, index) => `
-                                        <tr>
-                                            <td>${index + 1}</td>
-                                            <td>${turn.lat.toFixed(6)}, ${turn.lng.toFixed(6)}</td>
-                                            <td>${turn.angle.toFixed(1)}°</td>
-                                            <td><span class="badge badge-warning">${turn.angle > 90 ? 'High' : 'Medium'}</span></td>
-                                            <td><a href="https://www.google.com/maps?q=${turn.lat},${turn.lng}" target="_blank">View on Map</a></td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                ` : '<div class="detail-section"><p>No sharp turns detected on this route.</p></div>'}
-                
-                <!-- Waypoints Table -->
+            `;
+        }
+        
+        // Get sharp turns content
+        function getSharpTurnsContent(sharpTurns) {
+            if (!sharpTurns || sharpTurns.length === 0) {
+                return '<div class="detail-section"><div class="no-data">No sharp turns detected on this route</div></div>';
+            }
+            
+            return `
                 <div class="detail-section">
-                    <h3>📍 All Route Waypoints (${routeData.coordinates.length} total)</h3>
-                    <button onclick="exportToCSV('waypoints', ${JSON.stringify(routeData.coordinates).replace(/"/g, '&quot;')})" style="margin-bottom: 10px; padding: 5px 15px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer;">Export to CSV</button>
-                    <div style="overflow-x: auto; max-height: 400px;">
-                        <table class="amenity-table">
+                    <h3>⚠️ Sharp Turns Analysis (${sharpTurns.length} detected)</h3>
+                    <button class="export-btn" onclick="exportToCSV('sharp_turns', ${JSON.stringify(sharpTurns).replace(/"/g, '&quot;')})">Export CSV</button>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Step</th>
-                                    <th>Latitude</th>
-                                    <th>Longitude</th>
+                                    <th>#</th>
+                                    <th>Location</th>
+                                    <th>Turn Angle</th>
+                                    <th>Direction</th>
+                                    <th>Risk Score</th>
+                                    <th>Distance (km)</th>
+                                    <th>Recommended Speed</th>
+                                    <th>Visibility</th>
+                                    <th>Action Required</th>
                                     <th>Google Maps</th>
-                                    <th>Additional Info</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${routeData.coordinates.map((coord, index) => `
+                                ${sharpTurns.map((turn, index) => `
                                     <tr>
-                                        <td>${coord.stepId || index + 1}</td>
-                                        <td>${coord.lat.toFixed(6)}</td>
-                                        <td>${coord.lng.toFixed(6)}</td>
-                                        <td><a href="https://www.google.com/maps?q=${coord.lat},${coord.lng}" target="_blank">View</a></td>
-                                        <td>${coord.Route_Type || coord.route_type || '-'}</td>
+                                        <td>${index + 1}</td>
+                                        <td>${turn.latitude.toFixed(6)}, ${turn.longitude.toFixed(6)}</td>
+                                        <td>${turn.turnAngle.toFixed(1)}°</td>
+                                        <td>${turn.direction}</td>
+                                        <td><span class="badge ${turn.riskScore >= 8 ? 'badge-danger' : turn.riskScore >= 5 ? 'badge-warning' : 'badge-info'}">${turn.riskScore}/10</span></td>
+                                        <td>${turn.distanceFromStartKm.toFixed(2)}</td>
+                                        <td>${turn.recommendedSpeed} km/h</td>
+                                        <td>${turn.visibility}</td>
+                                        <td>${turn.driverActionRequired}</td>
+                                        <td><a href="https://www.google.com/maps?q=${turn.latitude},${turn.longitude}" target="_blank">View</a></td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -989,160 +1141,441 @@
             `;
         }
         
-        // Get enhanced view HTML
-        function getEnhancedView(routeData) {
-            if (!routeData.enhancedAnalysis) {
-                return `
-                    <div class="detail-section enhanced-section">
-                        <h3>Enhanced Analysis <span class="enhanced-badge">PREMIUM</span></h3>
-                        <p>Enhanced analysis requires API permissions. Click the button below to enable enhanced features.</p>
-                        <button onclick="loadEnhancedAnalysis('${routeData.routeInfo.filename}')" style="margin-top: 10px; padding: 10px 20px; background: #1e3c72; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                            Enable Enhanced Analysis
-                        </button>
-                    </div>
-                `;
+        // Get blind spots content
+        function getBlindSpotsContent(blindSpots) {
+            if (!blindSpots || blindSpots.length === 0) {
+                return '<div class="detail-section"><div class="no-data">No blind spots identified on this route</div></div>';
             }
             
-            const { enhancedAnalysis } = routeData;
-            
             return `
-                <!-- Enhanced Traffic Analysis -->
-                ${enhancedAnalysis.trafficData && enhancedAnalysis.trafficData.length > 0 ? `
-                    <div class="detail-section enhanced-section">
-                        <h3>🚦 Real-Time Traffic Analysis <span class="enhanced-badge">LIVE</span></h3>
-                        <button onclick="exportToCSV('traffic', ${JSON.stringify(enhancedAnalysis.trafficData).replace(/"/g, '&quot;')})" style="margin-bottom: 10px; padding: 5px 15px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer;">Export to CSV</button>
-                        <div style="overflow-x: auto;">
-                            <table class="amenity-table">
-                                <thead>
+                <div class="detail-section">
+                    <h3>👁️ Blind Spots (${blindSpots.length} identified)</h3>
+                    <button class="export-btn" onclick="exportToCSV('blind_spots', ${JSON.stringify(blindSpots).replace(/"/g, '&quot;')})">Export CSV</button>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Location</th>
+                                    <th>Type</th>
+                                    <th>Visibility (m)</th>
+                                    <th>Risk Score</th>
+                                    <th>Distance (km)</th>
+                                    <th>Road Width (m)</th>
+                                    <th>Mirror Installed</th>
+                                    <th>Action Required</th>
+                                    <th>Google Maps</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${blindSpots.map((spot, index) => `
                                     <tr>
-                                        <th>Location</th>
-                                        <th>Current Speed</th>
-                                        <th>Free Flow Speed</th>
-                                        <th>Congestion Level</th>
-                                        <th>Confidence</th>
-                                        <th>Google Maps</th>
+                                        <td>${index + 1}</td>
+                                        <td>${spot.latitude.toFixed(6)}, ${spot.longitude.toFixed(6)}</td>
+                                        <td>${spot.spotType.replace('_', ' ')}</td>
+                                        <td>${spot.visibilityDistance}</td>
+                                        <td><span class="badge ${spot.riskScore >= 8 ? 'badge-danger' : spot.riskScore >= 5 ? 'badge-warning' : 'badge-info'}">${spot.riskScore}/10</span></td>
+                                        <td>${spot.distanceFromStartKm.toFixed(2)}</td>
+                                        <td>${spot.roadWidth}</td>
+                                        <td>${spot.mirrorInstalled ? '✓' : '✗'}</td>
+                                        <td>${spot.driverActionRequired}</td>
+                                        <td><a href="https://www.google.com/maps?q=${spot.latitude},${spot.longitude}" target="_blank">View</a></td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    ${enhancedAnalysis.trafficData.map(traffic => `
-                                        <tr>
-                                            <td>${traffic.lat.toFixed(6)}, ${traffic.lng.toFixed(6)}</td>
-                                            <td>${traffic.currentSpeed} km/h</td>
-                                            <td>${traffic.freeFlowSpeed} km/h</td>
-                                            <td>
-                                                <span class="badge ${traffic.congestionLevel > 50 ? 'badge-warning' : 'badge-info'}">
-                                                    ${traffic.congestionLevel}%
-                                                </span>
-                                            </td>
-                                            <td>${traffic.confidence}%</td>
-                                            <td><a href="https://www.google.com/maps?q=${traffic.lat},${traffic.lng}" target="_blank">View</a></td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                ` : ''}
-                
-                <!-- Accident Prone Areas -->
-                ${enhancedAnalysis.accidentProneAreas && enhancedAnalysis.accidentProneAreas.length > 0 ? `
-                    <div class="detail-section enhanced-section">
-                        <h3>⚠️ Accident Prone Areas <span class="enhanced-badge">SAFETY</span></h3>
-                        <button onclick="exportToCSV('accidents', ${JSON.stringify(enhancedAnalysis.accidentProneAreas).replace(/"/g, '&quot;')})" style="margin-bottom: 10px; padding: 5px 15px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer;">Export to CSV</button>
-                        <div style="overflow-x: auto;">
-                            <table class="amenity-table">
-                                <thead>
-                                    <tr>
-                                        <th>Location</th>
-                                        <th>Turn Angle</th>
-                                        <th>Risk Level</th>
-                                        <th>Address</th>
-                                        <th>Google Maps</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${enhancedAnalysis.accidentProneAreas.map(area => `
-                                        <tr>
-                                            <td>${area.lat.toFixed(6)}, ${area.lng.toFixed(6)}</td>
-                                            <td>${area.angle.toFixed(1)}°</td>
-                                            <td>
-                                                <span class="badge ${area.riskLevel === 'high' ? 'badge-warning' : 'badge-info'}">
-                                                    ${area.riskLevel.toUpperCase()}
-                                                </span>
-                                            </td>
-                                            <td>${area.address}</td>
-                                            <td><a href="https://www.google.com/maps?q=${area.lat},${area.lng}" target="_blank">View</a></td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                ` : ''}
-                
-                <!-- Summary Stats -->
-                <div class="detail-section enhanced-section">
-                    <h3>📊 Enhanced Analysis Summary</h3>
-                    <div class="info-grid">
-                        <div class="info-card">
-                            <h4>Traffic Analysis</h4>
-                            <p><strong>Points Analyzed:</strong> ${enhancedAnalysis.trafficData?.length || 0}</p>
-                            <p><strong>High Congestion:</strong> ${enhancedAnalysis.trafficData?.filter(t => t.congestionLevel > 50).length || 0}</p>
-                        </div>
-                        <div class="info-card">
-                            <h4>Safety Analysis</h4>
-                            <p><strong>Sharp Turns:</strong> ${routeData.sharpTurns?.length || 0}</p>
-                            <p><strong>High Risk Areas:</strong> ${enhancedAnalysis.accidentProneAreas?.filter(a => a.riskLevel === 'high').length || 0}</p>
-                        </div>
-                        <div class="info-card">
-                            <h4>Data Quality</h4>
-                            <p><strong>API Status:</strong> <span class="badge badge-info">Active</span></p>
-                            <p><strong>Last Updated:</strong> ${new Date().toLocaleString()}</p>
-                        </div>
+                                `).join('')}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             `;
         }
         
-        // Switch view
-        function switchView(view) {
-            currentView = view;
-            if (currentRoute) {
-                displayRouteDetails(currentRoute);
+        // Get accident prone areas content
+        function getAccidentProneContent(areas) {
+            if (!areas || areas.length === 0) {
+                return '<div class="detail-section"><div class="no-data">No accident prone areas identified</div></div>';
+            }
+            
+            return `
+                <div class="detail-section">
+                    <h3>🛑 Accident-Prone Zones (${areas.length} identified)</h3>
+                    <button class="export-btn" onclick="exportToCSV('accident_prone', ${JSON.stringify(areas).replace(/"/g, '&quot;')})">Export CSV</button>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Location</th>
+                                    <th>Risk Score</th>
+                                    <th>Severity</th>
+                                    <th>Accident Type</th>
+                                    <th>Frequency</th>
+                                    <th>Contributing Factors</th>
+                                    <th>Distance (km)</th>
+                                    <th>Google Maps</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${areas.map((area, index) => `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${area.latitude.toFixed(6)}, ${area.longitude.toFixed(6)}</td>
+                                        <td><span class="badge ${area.riskScore >= 8 ? 'badge-danger' : area.riskScore >= 5 ? 'badge-warning' : 'badge-info'}">${area.riskScore}/10</span></td>
+                                        <td><span class="badge ${area.severityLevel === 'critical' ? 'badge-danger' : area.severityLevel === 'high' ? 'badge-warning' : 'badge-info'}">${area.severityLevel}</span></td>
+                                        <td>${area.accidentType.replace('_', ' ')}</td>
+                                        <td>${area.accidentFrequency}</td>
+                                        <td>${area.contributingFactors.join(', ')}</td>
+                                        <td>${area.distanceFromStartKm.toFixed(2)}</td>
+                                        <td><a href="https://www.google.com/maps?q=${area.latitude},${area.longitude}" target="_blank">View</a></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Get road conditions content
+        function getRoadConditionsContent(conditions) {
+            if (!conditions || conditions.length === 0) {
+                return '<div class="detail-section"><div class="no-data">No road condition data available</div></div>';
+            }
+            
+            return `
+                <div class="detail-section">
+                    <h3>🛣️ Road Surface Quality (${conditions.length} points analyzed)</h3>
+                    <button class="export-btn" onclick="exportToCSV('road_conditions', ${JSON.stringify(conditions).replace(/"/g, '&quot;')})">Export CSV</button>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Location</th>
+                                    <th>Surface Quality</th>
+                                    <th>Road Type</th>
+                                    <th>Surface</th>
+                                    <th>Width (m)</th>
+                                    <th>Lanes</th>
+                                    <th>Max Speed</th>
+                                    <th>Under Construction</th>
+                                    <th>Risk Score</th>
+                                    <th>Google Maps</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${conditions.map((condition, index) => `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${condition.latitude.toFixed(6)}, ${condition.longitude.toFixed(6)}</td>
+                                        <td><span class="badge ${condition.surfaceQuality === 'good' ? 'badge-info' : condition.surfaceQuality === 'poor' ? 'badge-warning' : 'badge-danger'}">${condition.surfaceQuality}</span></td>
+                                        <td>${condition.roadType}</td>
+                                        <td>${condition.surface}</td>
+                                        <td>${condition.width.toFixed(1)}</td>
+                                        <td>${condition.lanes}</td>
+                                        <td>${condition.maxSpeed} km/h</td>
+                                        <td>${condition.underConstruction ? '⚠️ Yes' : 'No'}</td>
+                                        <td><span class="badge ${condition.riskScore >= 7 ? 'badge-danger' : condition.riskScore >= 5 ? 'badge-warning' : 'badge-info'}">${condition.riskScore}/10</span></td>
+                                        <td><a href="https://www.google.com/maps?q=${condition.latitude},${condition.longitude}" target="_blank">View</a></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Get weather content
+        function getWeatherContent(weather) {
+            if (!weather || weather.length === 0) {
+                return `
+                    <div class="detail-section">
+                        <div class="no-data">
+                            <p>Weather data requires API permission</p>
+                            ${!apiPermissionGranted ? '<button onclick="requestWeatherData()" style="margin-top: 10px; padding: 10px 20px; background: #1e3c72; color: white; border: none; border-radius: 5px; cursor: pointer;">Enable Weather Data</button>' : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="detail-section">
+                    <h3>🌧️ Weather Risk Conditions (${weather.length} points analyzed)</h3>
+                    <button class="export-btn" onclick="exportToCSV('weather', ${JSON.stringify(weather).replace(/"/g, '&quot;')})">Export CSV</button>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Location</th>
+                                    <th>Season</th>
+                                    <th>Current Weather</th>
+                                    <th>Temperature (°C)</th>
+                                    <th>Humidity (%)</th>
+                                    <th>Wind Speed (m/s)</th>
+                                    <th>Visibility (m)</th>
+                                    <th>Challenges</th>
+                                    <th>Risk Score</th>
+                                    <th>Driver Caution</th>
+                                    <th>Google Maps</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${weather.map((w, index) => `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${w.latitude.toFixed(6)}, ${w.longitude.toFixed(6)}</td>
+                                        <td>${w.season}</td>
+                                        <td>${w.currentWeather}</td>
+                                        <td>${w.temperature.toFixed(1)}</td>
+                                        <td>${w.humidity}</td>
+                                        <td>${w.windSpeed}</td>
+                                        <td>${w.visibility}</td>
+                                        <td>${w.challenges.join(', ')}</td>
+                                        <td><span class="badge ${w.riskScore >= 7 ? 'badge-danger' : w.riskScore >= 5 ? 'badge-warning' : 'badge-info'}">${w.riskScore}/10</span></td>
+                                        <td>${w.driverCaution.join(', ')}</td>
+                                        <td><a href="https://www.google.com/maps?q=${w.latitude},${w.longitude}" target="_blank">View</a></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Get traffic content
+        function getTrafficContent(traffic) {
+            if (!traffic || traffic.length === 0) {
+                return `
+                    <div class="detail-section">
+                        <div class="no-data">
+                            <p>Traffic data requires API permission</p>
+                            ${!apiPermissionGranted ? '<button onclick="requestTrafficData()" style="margin-top: 10px; padding: 10px 20px; background: #1e3c72; color: white; border: none; border-radius: 5px; cursor: pointer;">Enable Traffic Data</button>' : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="detail-section">
+                    <h3>🚦 Traffic Patterns (${traffic.length} points analyzed)</h3>
+                    <button class="export-btn" onclick="exportToCSV('traffic', ${JSON.stringify(traffic).replace(/"/g, '&quot;')})">Export CSV</button>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Location</th>
+                                    <th>Congestion Level</th>
+                                    <th>Congestion %</th>
+                                    <th>Current Speed</th>
+                                    <th>Free Flow Speed</th>
+                                    <th>Confidence</th>
+                                    <th>Risk Score</th>
+                                    <th>Google Maps</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${traffic.map((t, index) => `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${t.latitude.toFixed(6)}, ${t.longitude.toFixed(6)}</td>
+                                        <td><span class="badge ${t.congestionLevel === 'heavy' ? 'badge-danger' : t.congestionLevel === 'moderate' ? 'badge-warning' : 'badge-info'}">${t.congestionLevel}</span></td>
+                                        <td>${t.congestionPercentage}%</td>
+                                        <td>${t.currentSpeedKmph} km/h</td>
+                                        <td>${t.freeFlowSpeedKmph} km/h</td>
+                                        <td>${t.confidence}%</td>
+                                        <td><span class="badge ${t.riskScore >= 7 ? 'badge-danger' : t.riskScore >= 5 ? 'badge-warning' : 'badge-info'}">${t.riskScore}/10</span></td>
+                                        <td><a href="https://www.google.com/maps?q=${t.latitude},${t.longitude}" target="_blank">View</a></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Get emergency services content
+        function getEmergencyServicesContent(services) {
+            if (!services || services.length === 0) {
+                return '<div class="detail-section"><div class="no-data">No emergency services found along this route</div></div>';
+            }
+            
+            const serviceTypes = {
+                hospital: '🏥',
+                police: '👮',
+                fire_station: '🚒',
+                fuel: '⛽',
+                school: '🏫'
+            };
+            
+            return `
+                <div class="detail-section">
+                    <h3>🏥 Medical / Police / Fuel / School Support (${services.length} found)</h3>
+                    <button class="export-btn" onclick="exportToCSV('emergency_services', ${JSON.stringify(services).replace(/"/g, '&quot;')})">Export CSV</button>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Type</th>
+                                    <th>Name</th>
+                                    <th>Location</th>
+                                    <th>Address</th>
+                                    <th>Phone</th>
+                                    <th>Distance from Route</th>
+                                    <th>Google Maps</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${services.map((service, index) => `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${serviceTypes[service.serviceType] || ''} ${service.serviceType.replace('_', ' ')}</td>
+                                        <td>${service.name}</td>
+                                        <td>${service.latitude.toFixed(6)}, ${service.longitude.toFixed(6)}</td>
+                                        <td>${service.address}</td>
+                                        <td>${service.phone}</td>
+                                        <td>${service.distanceFromRouteKm.toFixed(2)} km</td>
+                                        <td><a href="https://www.google.com/maps?q=${service.latitude},${service.longitude}" target="_blank">View</a></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Get network coverage content
+        function getNetworkCoverageContent(coverage) {
+            if (!coverage || coverage.length === 0) {
+                return '<div class="detail-section"><div class="no-data">No network coverage data available</div></div>';
+            }
+            
+            const deadZones = coverage.filter(c => c.isDeadZone);
+            const weakSignal = coverage.filter(c => c.signalStrength <= 2 && !c.isDeadZone);
+            
+            return `
+                <div class="detail-section">
+                    <h3>📶 Network Dead / Weak Zones (${coverage.length} points analyzed)</h3>
+                    <button class="export-btn" onclick="exportToCSV('network_coverage', ${JSON.stringify(coverage).replace(/"/g, '&quot;')})">Export CSV</button>
+                    
+                    <div class="info-grid" style="margin-bottom: 20px;">
+                        <div class="info-card">
+                            <h4>Coverage Summary</h4>
+                            <p><strong>Dead Zones:</strong> ${deadZones.length}</p>
+                            <p><strong>Weak Signal Areas:</strong> ${weakSignal.length}</p>
+                            <p><strong>Good Coverage:</strong> ${coverage.filter(c => c.signalStrength > 2).length}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Location</th>
+                                    <th>Dead Zone</th>
+                                    <th>Signal Strength</th>
+                                    <th>Signal Category</th>
+                                    <th>Communication Risk</th>
+                                    <th>Distance (km)</th>
+                                    <th>Providers</th>
+                                    <th>Google Maps</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${coverage.map((cov, index) => `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${cov.latitude.toFixed(6)}, ${cov.longitude.toFixed(6)}</td>
+                                        <td>${cov.isDeadZone ? '⚠️ Yes' : 'No'}</td>
+                                        <td>${cov.signalStrength}/5</td>
+                                        <td><span class="badge ${cov.signalCategory === 'no_signal' ? 'badge-danger' : cov.signalCategory === 'weak' ? 'badge-warning' : 'badge-info'}">${cov.signalCategory}</span></td>
+                                        <td><span class="badge ${cov.communicationRisk === 'high' ? 'badge-danger' : cov.communicationRisk === 'medium' ? 'badge-warning' : 'badge-info'}">${cov.communicationRisk}</span></td>
+                                        <td>${cov.distanceFromStartKm.toFixed(2)}</td>
+                                        <td>${cov.providers.join(', ')}</td>
+                                        <td><a href="https://www.google.com/maps?q=${cov.latitude},${cov.longitude}" target="_blank">View</a></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Get eco-sensitive zones content
+        function getEcoZonesContent(zones) {
+            if (!zones || zones.length === 0) {
+                return '<div class="detail-section"><div class="no-data">No eco-sensitive zones found along this route</div></div>';
+            }
+            
+            return `
+                <div class="detail-section">
+                    <h3>🌿 Environmental Zones & Compliance (${zones.length} found)</h3>
+                    <button class="export-btn" onclick="exportToCSV('eco_zones', ${JSON.stringify(zones).replace(/"/g, '&quot;')})">Export CSV</button>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Location</th>
+                                    <th>Zone Type</th>
+                                    <th>Name</th>
+                                    <th>Risk Type</th>
+                                    <th>Severity</th>
+                                    <th>Compliance Required</th>
+                                    <th>Restrictions</th>
+                                    <th>Google Maps</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${zones.map((zone, index) => `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${zone.latitude.toFixed(6)}, ${zone.longitude.toFixed(6)}</td>
+                                        <td>${zone.zoneType.replace('_', ' ')}</td>
+                                        <td>${zone.name}</td>
+                                        <td>${zone.riskType}</td>
+                                        <td><span class="badge ${zone.severity === 'critical' ? 'badge-danger' : zone.severity === 'high' ? 'badge-warning' : 'badge-info'}">${zone.severity}</span></td>
+                                        <td>${zone.complianceRequired}</td>
+                                        <td>${zone.restrictions.join(', ')}</td>
+                                        <td><a href="https://www.google.com/maps?q=${zone.latitude},${zone.longitude}" target="_blank">View</a></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Request weather data
+        function requestWeatherData() {
+            if (!apiPermissionGranted) {
+                showAPIModal(() => {
+                    loadEnhancedData(currentRoute._id);
+                });
             }
         }
         
-        // Load enhanced analysis
-        async function loadEnhancedAnalysis(routeId) {
+        // Request traffic data
+        function requestTrafficData() {
             if (!apiPermissionGranted) {
                 showAPIModal(() => {
-                    loadEnhancedAnalysis(routeId);
+                    loadEnhancedData(currentRoute._id);
                 });
-                return;
-            }
-            
-            showNotification('Loading enhanced analysis...', 'info');
-            
-            try {
-                const response = await fetch(`${API_BASE}/routes/${routeId}?enhanced=true`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-permission': 'confirmed',
-                        'x-user-id': 'admin'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to load enhanced analysis');
-                }
-                
-                const routeData = await response.json();
-                currentRoute = routeData;
-                displayRouteDetails(routeData);
-                showNotification('Enhanced analysis loaded successfully!', 'success');
-            } catch (error) {
-                console.error('Error loading enhanced analysis:', error);
-                showNotification('Failed to load enhanced analysis', 'error');
             }
         }
         
@@ -1150,34 +1583,60 @@
         function exportToCSV(dataType, data) {
             let csvContent = '';
             
-            switch(dataType) {
-                case 'waypoints':
-                    csvContent = 'Step,Latitude,Longitude,Route_Type\n';
-                    data.forEach((coord, index) => {
-                        csvContent += `${coord.stepId || index + 1},${coord.lat},${coord.lng},${coord.Route_Type || coord.route_type || ''}\n`;
-                    });
-                    break;
-                    
-                case 'traffic':
-                    csvContent = 'Latitude,Longitude,Current_Speed,Free_Flow_Speed,Congestion_Level,Confidence\n';
-                    data.forEach(traffic => {
-                        csvContent += `${traffic.lat},${traffic.lng},${traffic.currentSpeed},${traffic.freeFlowSpeed},${traffic.congestionLevel},${traffic.confidence}\n`;
-                    });
-                    break;
-                    
-                case 'accidents':
-                    csvContent = 'Latitude,Longitude,Turn_Angle,Risk_Level,Address\n';
-                    data.forEach(area => {
-                        csvContent += `${area.lat},${area.lng},${area.angle},${area.riskLevel},"${area.address}"\n`;
-                    });
-                    break;
-            }
+            // Define headers based on data type
+            const headers = {
+                sharp_turns: 'Latitude,Longitude,Turn_Angle,Direction,Risk_Score,Distance_km,Recommended_Speed,Visibility,Action_Required',
+                blind_spots: 'Latitude,Longitude,Type,Visibility_m,Risk_Score,Distance_km,Road_Width,Mirror_Installed,Action_Required',
+                accident_prone: 'Latitude,Longitude,Risk_Score,Severity,Accident_Type,Frequency,Contributing_Factors,Distance_km',
+                road_conditions: 'Latitude,Longitude,Surface_Quality,Road_Type,Surface,Width_m,Lanes,Max_Speed,Under_Construction,Risk_Score',
+                weather: 'Latitude,Longitude,Season,Current_Weather,Temperature,Humidity,Wind_Speed,Visibility,Challenges,Risk_Score,Driver_Caution',
+                traffic: 'Latitude,Longitude,Congestion_Level,Congestion_Percentage,Current_Speed,Free_Flow_Speed,Confidence,Risk_Score',
+                emergency_services: 'Type,Name,Latitude,Longitude,Address,Phone,Distance_From_Route',
+                network_coverage: 'Latitude,Longitude,Dead_Zone,Signal_Strength,Signal_Category,Communication_Risk,Distance_km,Providers',
+                eco_zones: 'Latitude,Longitude,Zone_Type,Name,Risk_Type,Severity,Compliance_Required,Restrictions'
+            };
             
+            csvContent = headers[dataType] + '\n';
+            
+            // Add data rows
+            data.forEach(item => {
+                switch(dataType) {
+                    case 'sharp_turns':
+                        csvContent += `${item.latitude},${item.longitude},${item.turnAngle},${item.direction},${item.riskScore},${item.distanceFromStartKm},${item.recommendedSpeed},${item.visibility},"${item.driverActionRequired}"\n`;
+                        break;
+                    case 'blind_spots':
+                        csvContent += `${item.latitude},${item.longitude},${item.spotType},${item.visibilityDistance},${item.riskScore},${item.distanceFromStartKm},${item.roadWidth},${item.mirrorInstalled},"${item.driverActionRequired}"\n`;
+                        break;
+                    case 'accident_prone':
+                        csvContent += `${item.latitude},${item.longitude},${item.riskScore},${item.severityLevel},${item.accidentType},${item.accidentFrequency},"${item.contributingFactors.join('; ')}",${item.distanceFromStartKm}\n`;
+                        break;
+                    case 'road_conditions':
+                        csvContent += `${item.latitude},${item.longitude},${item.surfaceQuality},${item.roadType},${item.surface},${item.width},${item.lanes},${item.maxSpeed},${item.underConstruction},${item.riskScore}\n`;
+                        break;
+                    case 'weather':
+                        csvContent += `${item.latitude},${item.longitude},${item.season},"${item.currentWeather}",${item.temperature},${item.humidity},${item.windSpeed},${item.visibility},"${item.challenges.join('; ')}",${item.riskScore},"${item.driverCaution.join('; ')}"\n`;
+                        break;
+                    case 'traffic':
+                        csvContent += `${item.latitude},${item.longitude},${item.congestionLevel},${item.congestionPercentage},${item.currentSpeedKmph},${item.freeFlowSpeedKmph},${item.confidence},${item.riskScore}\n`;
+                        break;
+                    case 'emergency_services':
+                        csvContent += `${item.serviceType},"${item.name}",${item.latitude},${item.longitude},"${item.address}","${item.phone}",${item.distanceFromRouteKm}\n`;
+                        break;
+                    case 'network_coverage':
+                        csvContent += `${item.latitude},${item.longitude},${item.isDeadZone},${item.signalStrength},${item.signalCategory},${item.communicationRisk},${item.distanceFromStartKm},"${item.providers.join('; ')}"\n`;
+                        break;
+                    case 'eco_zones':
+                        csvContent += `${item.latitude},${item.longitude},${item.zoneType},"${item.name}",${item.riskType},${item.severity},"${item.complianceRequired}","${item.restrictions.join('; ')}"\n`;
+                        break;
+                }
+            });
+            
+            // Download file
             const blob = new Blob([csvContent], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `route_${dataType}_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `route_${currentRoute.routeName}_${dataType}_${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1187,25 +1646,31 @@
         }
         
         // Initialize Leaflet map
-        function initializeMap(routeData) {
+        function initializeMap(analysisData) {
             // Remove existing map if any
             if (currentMap) {
                 currentMap.remove();
             }
             
+            const route = analysisData.route;
+            if (!route || !route.routePoints || route.routePoints.length === 0) {
+                console.error('No route points available');
+                return;
+            }
+            
             // Create new map
-            currentMap = L.map('map').setView(
-                [routeData.startLocation.lat, routeData.startLocation.lng], 
-                12
-            );
+            const startLat = route.fromCoordinates.coordinates[1];
+            const startLng = route.fromCoordinates.coordinates[0];
+            
+            currentMap = L.map('map').setView([startLat, startLng], 12);
             
             // Add tile layer
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(currentMap);
             
-            // Create route polyline with ALL waypoints
-            const routeCoordinates = routeData.coordinates.map(coord => [coord.lat, coord.lng]);
+            // Create route polyline
+            const routeCoordinates = route.routePoints.map(point => [point.lat, point.lng]);
             const routeLine = L.polyline(routeCoordinates, {
                 color: '#1e3c72',
                 weight: 4,
@@ -1213,10 +1678,10 @@
             }).addTo(currentMap);
             
             // Add waypoint markers (sample to avoid overcrowding)
-            const waypointInterval = Math.max(1, Math.floor(routeData.coordinates.length / 30));
-            routeData.coordinates.forEach((coord, index) => {
-                if (index % waypointInterval === 0 && index !== 0 && index !== routeData.coordinates.length - 1) {
-                    L.circleMarker([coord.lat, coord.lng], {
+            const waypointInterval = Math.max(1, Math.floor(route.routePoints.length / 30));
+            route.routePoints.forEach((point, index) => {
+                if (index % waypointInterval === 0 && index !== 0 && index !== route.routePoints.length - 1) {
+                    L.circleMarker([point.lat, point.lng], {
                         radius: 4,
                         fillColor: '#666',
                         color: '#fff',
@@ -1224,7 +1689,7 @@
                         opacity: 1,
                         fillOpacity: 0.8
                     }).addTo(currentMap)
-                      .bindPopup(`Waypoint ${coord.stepId || index + 1}`);
+                      .bindPopup(`Waypoint ${point.stepId || index + 1}`);
                 }
             });
             
@@ -1235,67 +1700,258 @@
                 className: 'custom-div-icon'
             });
             
-            L.marker([routeData.startLocation.lat, routeData.startLocation.lng], {
+            L.marker([startLat, startLng], {
                 icon: startIcon
             }).addTo(currentMap)
               .bindPopup(`<strong>Start Location</strong><br>
-                         ${routeData.startLocation.isPetrolPump ? '⛽ Petrol Pump' : '📍 Regular Location'}<br>
-                         Lat: ${routeData.startLocation.lat.toFixed(6)}<br>
-                         Lng: ${routeData.startLocation.lng.toFixed(6)}`);
+                         ${route.fromAddress}<br>
+                         Lat: ${startLat.toFixed(6)}<br>
+                         Lng: ${startLng.toFixed(6)}`);
             
             // Add end marker
+            const endLat = route.toCoordinates.coordinates[1];
+            const endLng = route.toCoordinates.coordinates[0];
+            
             const endIcon = L.divIcon({
                 html: '<div style="background: #f44336; color: white; padding: 5px 10px; border-radius: 20px; font-weight: bold;">END</div>',
                 iconSize: [50, 30],
                 className: 'custom-div-icon'
             });
             
-            L.marker([routeData.endLocation.lat, routeData.endLocation.lng], {
+            L.marker([endLat, endLng], {
                 icon: endIcon
             }).addTo(currentMap)
               .bindPopup(`<strong>End Location</strong><br>
-                         ${routeData.endLocation.isPetrolPump ? '⛽ Petrol Pump' : '📍 Regular Location'}<br>
-                         Lat: ${routeData.endLocation.lat.toFixed(6)}<br>
-                         Lng: ${routeData.endLocation.lng.toFixed(6)}`);
-            
-            // Add sharp turn markers
-            if (routeData.sharpTurns) {
-                routeData.sharpTurns.forEach((turn, index) => {
-                    const turnIcon = L.divIcon({
-                        html: '<div style="background: #ff9800; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">⚠</div>',
-                        iconSize: [25, 25],
-                        className: 'custom-div-icon'
-                    });
-                    
-                    L.marker([turn.lat, turn.lng], {
-                        icon: turnIcon
-                    }).addTo(currentMap)
-                      .bindPopup(`<strong>Sharp Turn ${index + 1}</strong><br>
-                                 Angle: ${turn.angle.toFixed(1)}°<br>
-                                 Location: ${turn.lat.toFixed(6)}, ${turn.lng.toFixed(6)}`);
-                });
-            }
-            
-            // Add traffic markers if in enhanced view
-            if (currentView === 'enhanced' && routeData.enhancedAnalysis?.trafficData) {
-                routeData.enhancedAnalysis.trafficData.forEach(traffic => {
-                    const color = traffic.congestionLevel > 50 ? '#f44336' : '#4caf50';
-                    L.circleMarker([traffic.lat, traffic.lng], {
-                        radius: 8,
-                        fillColor: color,
-                        color: '#fff',
-                        weight: 2,
-                        opacity: 1,
-                        fillOpacity: 0.8
-                    }).addTo(currentMap)
-                      .bindPopup(`<strong>Traffic Data</strong><br>
-                                 Speed: ${traffic.currentSpeed}/${traffic.freeFlowSpeed} km/h<br>
-                                 Congestion: ${traffic.congestionLevel}%`);
-                });
-            }
+                         ${route.toAddress}<br>
+                         Lat: ${endLat.toFixed(6)}<br>
+                         Lng: ${endLng.toFixed(6)}`);
             
             // Fit map to route bounds
             currentMap.fitBounds(routeLine.getBounds().pad(0.1));
+            
+            // Add category-specific markers
+            updateMapMarkers(currentCategory);
+        }
+        
+        // Update map markers based on category
+        function updateMapMarkers(category) {
+            if (!currentMap || !currentAnalysisData) return;
+            
+            // Remove all existing markers except start/end
+            currentMap.eachLayer(layer => {
+                if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
+                    const popup = layer.getPopup();
+                    if (popup) {
+                        const content = popup.getContent();
+                        if (!content.includes('Start Location') && !content.includes('End Location') && !content.includes('Waypoint')) {
+                            currentMap.removeLayer(layer);
+                        }
+                    }
+                }
+            });
+            
+            // Add category-specific markers
+            switch(category) {
+                case 'sharpTurns':
+                    addSharpTurnMarkers();
+                    break;
+                case 'blindSpots':
+                    addBlindSpotMarkers();
+                    break;
+                case 'accidentProneAreas':
+                    addAccidentProneMarkers();
+                    break;
+                case 'emergencyServices':
+                    addEmergencyServiceMarkers();
+                    break;
+                case 'networkCoverages':
+                    addNetworkCoverageMarkers();
+                    break;
+                case 'ecoSensitiveZones':
+                    addEcoZoneMarkers();
+                    break;
+                case 'trafficData':
+                    addTrafficMarkers();
+                    break;
+                case 'weatherConditions':
+                    addWeatherMarkers();
+                    break;
+            }
+        }
+        
+        // Add sharp turn markers
+        function addSharpTurnMarkers() {
+            const sharpTurns = currentAnalysisData.sharpTurns || [];
+            sharpTurns.forEach((turn, index) => {
+                const turnIcon = L.divIcon({
+                    html: '<div style="background: #ff9800; color: white; width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">⚠</div>',
+                    iconSize: [25, 25],
+                    className: 'custom-div-icon'
+                });
+                
+                L.marker([turn.latitude, turn.longitude], {
+                    icon: turnIcon
+                }).addTo(currentMap)
+                  .bindPopup(`<strong>Sharp Turn ${index + 1}</strong><br>
+                             Angle: ${turn.turnAngle.toFixed(1)}°<br>
+                             Direction: ${turn.direction}<br>
+                             Risk Score: ${turn.riskScore}/10<br>
+                             Action: ${turn.driverActionRequired}`);
+            });
+        }
+        
+        // Add blind spot markers
+        function addBlindSpotMarkers() {
+            const blindSpots = currentAnalysisData.blindSpots || [];
+            blindSpots.forEach((spot, index) => {
+                L.circleMarker([spot.latitude, spot.longitude], {
+                    radius: 8,
+                    fillColor: '#9c27b0',
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(currentMap)
+                  .bindPopup(`<strong>Blind Spot ${index + 1}</strong><br>
+                             Type: ${spot.spotType}<br>
+                             Visibility: ${spot.visibilityDistance}m<br>
+                             Risk Score: ${spot.riskScore}/10`);
+            });
+        }
+        
+        // Add accident prone markers
+        function addAccidentProneMarkers() {
+            const areas = currentAnalysisData.accidentProneAreas || [];
+            areas.forEach((area, index) => {
+                const color = area.severityLevel === 'critical' ? '#9c27b0' : 
+                             area.severityLevel === 'high' ? '#f44336' : '#ff9800';
+                
+                L.circleMarker([area.latitude, area.longitude], {
+                    radius: 10,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(currentMap)
+                  .bindPopup(`<strong>Accident Prone Area ${index + 1}</strong><br>
+                             Severity: ${area.severityLevel}<br>
+                             Type: ${area.accidentType}<br>
+                             Risk Score: ${area.riskScore}/10`);
+            });
+        }
+        
+        // Add emergency service markers
+        function addEmergencyServiceMarkers() {
+            const services = currentAnalysisData.emergencyServices || [];
+            const icons = {
+                hospital: '🏥',
+                police: '👮',
+                fire_station: '🚒',
+                fuel: '⛽',
+                school: '🏫'
+            };
+            
+            services.forEach(service => {
+                const icon = icons[service.serviceType] || '📍';
+                const markerIcon = L.divIcon({
+                    html: `<div style="font-size: 20px;">${icon}</div>`,
+                    iconSize: [30, 30],
+                    className: 'custom-div-icon'
+                });
+                
+                L.marker([service.latitude, service.longitude], {
+                    icon: markerIcon
+                }).addTo(currentMap)
+                  .bindPopup(`<strong>${service.name}</strong><br>
+                             Type: ${service.serviceType}<br>
+                             Phone: ${service.phone}<br>
+                             Distance: ${service.distanceFromRouteKm.toFixed(2)} km`);
+            });
+        }
+        
+        // Add network coverage markers
+        function addNetworkCoverageMarkers() {
+            const coverage = currentAnalysisData.networkCoverages || [];
+            coverage.filter(c => c.isDeadZone || c.signalStrength <= 2).forEach(cov => {
+                const color = cov.isDeadZone ? '#f44336' : '#ff9800';
+                L.circleMarker([cov.latitude, cov.longitude], {
+                    radius: 8,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.6
+                }).addTo(currentMap)
+                  .bindPopup(`<strong>Network Coverage</strong><br>
+                             ${cov.isDeadZone ? '⚠️ Dead Zone' : 'Weak Signal'}<br>
+                             Signal: ${cov.signalStrength}/5<br>
+                             Risk: ${cov.communicationRisk}`);
+            });
+        }
+        
+        // Add eco zone markers
+        function addEcoZoneMarkers() {
+            const zones = currentAnalysisData.ecoSensitiveZones || [];
+            zones.forEach(zone => {
+                L.circleMarker([zone.latitude, zone.longitude], {
+                    radius: 12,
+                    fillColor: '#4caf50',
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.6
+                }).addTo(currentMap)
+                  .bindPopup(`<strong>${zone.name}</strong><br>
+                             Type: ${zone.zoneType}<br>
+                             Severity: ${zone.severity}<br>
+                             Compliance: ${zone.complianceRequired}`);
+            });
+        }
+        
+        // Add traffic markers
+        function addTrafficMarkers() {
+            const traffic = currentAnalysisData.trafficData || [];
+            traffic.forEach(t => {
+                const color = t.congestionLevel === 'heavy' ? '#f44336' : 
+                             t.congestionLevel === 'moderate' ? '#ff9800' : '#4caf50';
+                
+                L.circleMarker([t.latitude, t.longitude], {
+                    radius: 8,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(currentMap)
+                  .bindPopup(`<strong>Traffic Data</strong><br>
+                             Congestion: ${t.congestionLevel}<br>
+                             Speed: ${t.currentSpeedKmph}/${t.freeFlowSpeedKmph} km/h<br>
+                             Congestion: ${t.congestionPercentage}%`);
+            });
+        }
+        
+        // Add weather markers
+        function addWeatherMarkers() {
+            const weather = currentAnalysisData.weatherConditions || [];
+            weather.forEach(w => {
+                if (w.riskScore >= 6) {
+                    const weatherIcon = L.divIcon({
+                        html: '<div style="font-size: 20px;">🌧️</div>',
+                        iconSize: [30, 30],
+                        className: 'custom-div-icon'
+                    });
+                    
+                    L.marker([w.latitude, w.longitude], {
+                        icon: weatherIcon
+                    }).addTo(currentMap)
+                      .bindPopup(`<strong>Weather Risk</strong><br>
+                                 ${w.currentWeather}<br>
+                                 Temperature: ${w.temperature}°C<br>
+                                 Risk Score: ${w.riskScore}/10<br>
+                                 Caution: ${w.driverCaution.join(', ')}`);
+                }
+            });
         }
         
         // Initialize application on load
